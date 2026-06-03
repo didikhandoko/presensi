@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Presensi KIP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #0f1117;
+      --ink-2: #3d4252;
+      --ink-3: #7c8398;
+      --surface: #ffffff;
+      --surface-2: #f4f5f8;
+      --surface-3: #eceef3;
+      --accent: #1a56db;
+      --accent-2: #1e40af;
+      --accent-glow: rgba(26,86,219,0.18);
+      --success: #059669;
+      --danger: #dc2626;
+      --warn: #d97706;
+      --border: #dde1ea;
+      --border-focus: #1a56db;
+      --radius: 14px;
+      --radius-sm: 8px;
+      --shadow: 0 1px 3px rgba(15,17,23,0.08), 0 8px 24px rgba(15,17,23,0.06);
+      --shadow-lg: 0 4px 6px rgba(15,17,23,0.06), 0 20px 48px rgba(15,17,23,0.12);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--surface-2);
+      color: var(--ink);
+      min-height: 100vh;
+      padding: 20px 16px 60px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 80% 40% at 50% -10%, rgba(26,86,219,0.08) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 30% at 90% 80%, rgba(99,102,241,0.06) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      max-width: 520px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Header ── */
+    .header {
+      text-align: center;
+      padding: 28px 0 24px;
+    }
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--accent-glow);
+      border: 1px solid rgba(26,86,219,0.2);
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 5px 12px;
+      border-radius: 99px;
+      margin-bottom: 14px;
+    }
+    .header-badge span { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); display: inline-block; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    .header h1 {
+      font-size: clamp(22px, 5vw, 28px);
+      font-weight: 800;
+      color: var(--ink);
+      line-height: 1.2;
+      margin-bottom: 6px;
+    }
+    .header p {
+      font-size: 13.5px;
+      color: var(--ink-3);
+      font-weight: 500;
+    }
+
+    /* ── Progress ── */
+    .progress-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      margin-bottom: 24px;
+    }
+    .step-dot {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700;
+      background: var(--surface-3);
+      color: var(--ink-3);
+      border: 2px solid var(--border);
+      transition: all 0.3s ease;
+      position: relative;
+      z-index: 1;
+    }
+    .step-dot.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px var(--accent-glow);
+    }
+    .step-dot.done {
+      background: var(--success);
+      color: white;
+      border-color: var(--success);
+    }
+    .step-dot.done::after { content: '✓'; }
+    .step-dot:not(.done) .dot-num { display: block; }
+    .step-dot.done .dot-num { display: none; }
+    .step-line {
+      flex: 1; height: 2px; max-width: 60px;
+      background: var(--border);
+      transition: background 0.4s ease;
+    }
+    .step-line.done { background: var(--success); }
+    .step-labels {
+      display: flex;
+      justify-content: space-between;
+      padding: 0 4px;
+      margin-top: 6px;
+      margin-bottom: 20px;
+    }
+    .step-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--ink-3);
+      text-align: center;
+      flex: 1;
+      transition: color 0.3s;
+    }
+    .step-label.active { color: var(--accent); }
+    .step-label.done { color: var(--success); }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--surface-3);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .card-icon {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      background: var(--accent-glow);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .card-title { font-size: 15px; font-weight: 700; color: var(--ink); }
+    .card-subtitle { font-size: 12px; color: var(--ink-3); margin-top: 1px; }
+    .card-body { padding: 20px 24px 24px; }
+
+    /* ── Form ── */
+    .field { margin-bottom: 16px; }
+    .field:last-child { margin-bottom: 0; }
+    label {
+      display: block;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--ink-2);
+      margin-bottom: 6px;
+      letter-spacing: 0.01em;
+    }
+    label .req { color: var(--danger); margin-left: 2px; }
+
+    input[type="text"], input[type="tel"], select {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--ink);
+      background: var(--surface);
+      transition: border-color 0.2s, box-shadow 0.2s;
+      appearance: none;
+      -webkit-appearance: none;
+      outline: none;
+    }
+    input::placeholder { color: var(--ink-3); font-weight: 400; }
+    input:focus, select:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    input.error, select.error { border-color: var(--danger); }
+    .field-error {
+      font-size: 11.5px;
+      color: var(--danger);
+      margin-top: 4px;
+      display: none;
+      font-weight: 500;
+    }
+    .field-error.show { display: block; }
+
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%237c8398' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 40px;
+    }
+
+    /* ── Camera ── */
+    .cam-wrapper { position: relative; border-radius: var(--radius-sm); overflow: hidden; background: #0a0c14; aspect-ratio: 4/3; }
+    .cam-wrapper video { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .cam-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to bottom, transparent 60%, rgba(0,0,0,0.4));
+      pointer-events: none;
+    }
+    .cam-guide {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      width: 140px; height: 140px;
+      border: 2px dashed rgba(255,255,255,0.4);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .cam-guide::before {
+      content: '';
+      position: absolute; inset: -8px;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 50%;
+    }
+    .cam-hint {
+      position: absolute; bottom: 10px; left: 0; right: 0;
+      text-align: center;
+      font-size: 11px; color: rgba(255,255,255,0.7);
+      font-weight: 500;
+    }
+
+    .preview-wrap { position: relative; border-radius: var(--radius-sm); overflow: hidden; }
+    .preview-wrap img { width: 100%; display: block; border-radius: var(--radius-sm); }
+    .preview-badge {
+      position: absolute; top: 8px; left: 8px;
+      background: rgba(5,150,105,0.9);
+      color: white; font-size: 10px; font-weight: 700;
+      padding: 3px 8px; border-radius: 99px;
+      display: flex; align-items: center; gap: 4px;
+    }
+
+    .btn-cam {
+      width: 100%; margin-top: 8px;
+      padding: 11px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      font-family: inherit;
+      font-size: 13px; font-weight: 600;
+      color: var(--ink-2);
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-cam:hover { background: var(--surface-2); border-color: var(--accent); color: var(--accent); }
+    .cam-error {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      font-size: 12.5px; color: var(--danger); font-weight: 500;
+      text-align: center; display: none;
+    }
+    .cam-error.show { display: block; }
+
+    /* ── Signature ── */
+    .sig-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .btn-clr {
+      font-family: inherit;
+      font-size: 11.5px; font-weight: 600;
+      color: var(--danger);
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 6px;
+      padding: 4px 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-clr:hover { background: #fee2e2; }
+    .sig-canvas-wrap {
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .sig-canvas-wrap.active { border-color: var(--accent); }
+    .sig-canvas-wrap .sig-placeholder {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      pointer-events: none;
+    }
+    .sig-placeholder-text {
+      font-size: 12px; color: #c0c5d4; font-weight: 500;
+      text-align: center; line-height: 1.4;
+    }
+    canvas#sig-pad { width: 100%; height: 160px; display: block; cursor: crosshair; touch-action: none; }
+
+    /* ── Navigation ── */
+    .nav-row {
+      display: flex; gap: 10px; margin-top: 24px;
+    }
+    .btn-back, .btn-next, .btn-submit {
+      flex: 1; padding: 13px;
+      border-radius: var(--radius-sm);
+      font-family: inherit; font-size: 14px; font-weight: 700;
+      cursor: pointer; border: none;
+      transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-back {
+      background: var(--surface-2);
+      color: var(--ink-2);
+      border: 1.5px solid var(--border);
+      flex: 0 0 auto; width: 48px; flex: none;
+    }
+    .btn-back:hover { background: var(--surface-3); }
+    .btn-next {
+      background: var(--accent);
+      color: white;
+      box-shadow: 0 4px 12px rgba(26,86,219,0.3);
+    }
+    .btn-next:hover { background: var(--accent-2); box-shadow: 0 4px 16px rgba(26,86,219,0.4); }
+    .btn-submit {
+      background: var(--success);
+      color: white;
+      box-shadow: 0 4px 12px rgba(5,150,105,0.3);
+    }
+    .btn-submit:hover { background: #047857; }
+    .btn-submit:disabled, .btn-next:disabled {
+      background: var(--surface-3); color: var(--ink-3);
+      box-shadow: none; cursor: not-allowed;
+    }
+
+    /* ── Review Card ── */
+    .review-grid { display: grid; gap: 10px; }
+    .review-item {
+      display: flex; flex-direction: column; gap: 2px;
+      padding: 10px 12px;
+      background: var(--surface-2);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .review-key { font-size: 10.5px; font-weight: 700; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.05em; }
+    .review-val { font-size: 14px; font-weight: 600; color: var(--ink); }
+    .review-images {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px;
+    }
+    .review-img-box { border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+    .review-img-box img { width: 100%; display: block; }
+    .review-img-label {
+      font-size: 10px; font-weight: 700; color: var(--ink-3);
+      text-transform: uppercase; letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+
+    /* ── Success State ── */
+    .success-screen {
+      text-align: center; padding: 40px 24px;
+    }
+    .success-icon {
+      width: 72px; height: 72px;
+      background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+      border-radius: 50%;
+      margin: 0 auto 20px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 32px;
+      animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes scaleIn { from{transform:scale(0)} to{transform:scale(1)} }
+    .success-title { font-size: 20px; font-weight: 800; margin-bottom: 8px; color: var(--ink); }
+    .success-msg { font-size: 13.5px; color: var(--ink-3); line-height: 1.6; margin-bottom: 24px; }
+    .success-meta {
+      display: inline-block;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--ink-3);
+    }
+    .btn-reset {
+      display: block; width: 100%; margin-top: 20px;
+      padding: 13px; background: var(--accent); color: white;
+      border: none; border-radius: var(--radius-sm);
+      font-family: inherit; font-size: 14px; font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* ── Loading Overlay ── */
+    .loading-overlay {
+      position: fixed; inset: 0;
+      background: rgba(15,17,23,0.5);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.3s;
+    }
+    .loading-overlay.show { opacity: 1; pointer-events: all; }
+    .loading-card {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 32px;
+      text-align: center;
+      box-shadow: var(--shadow-lg);
+      min-width: 220px;
+    }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid var(--surface-3);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+    .loading-sub { font-size: 11.5px; color: var(--ink-3); margin-top: 4px; }
+
+    /* ── Offline Banner ── */
+    .offline-banner {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      background: var(--warn); color: white;
+      padding: 10px 20px;
+      font-size: 12.5px; font-weight: 600; text-align: center;
+      transform: translateY(-100%); transition: transform 0.3s;
+    }
+    .offline-banner.show { transform: translateY(0); }
+
+    /* ── Animations ── */
+    .step-panel {
+      animation: slideIn 0.3s ease;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(16px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 11px;
+      color: var(--ink-3);
+      font-weight: 500;
+    }
+    .footer strong { color: var(--ink-2); }
+  </style>
+</head>
+<body>
+
+<!-- Offline Banner -->
+<div class="offline-banner" id="offline-banner">⚠ Tidak ada koneksi internet. Periksa jaringan Anda.</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-card">
+    <div class="spinner"></div>
+    <div class="loading-text">Mengirim Presensi...</div>
+    <div class="loading-sub">Mohon tunggu sebentar</div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-badge"><span></span> Zoom Meeting</div>
+    <h1>Presensi KIP</h1>
+    <p>Gunakan perangkat Anda untuk mengisi daftar hadir</p>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-wrap">
+    <div class="step-dot active" id="dot-1"><span class="dot-num">1</span></div>
+    <div class="step-line" id="line-1"></div>
+    <div class="step-dot" id="dot-2"><span class="dot-num">2</span></div>
+    <div class="step-line" id="line-2"></div>
+    <div class="step-dot" id="dot-3"><span class="dot-num">3</span></div>
+    <div class="step-line" id="line-3"></div>
+    <div class="step-dot" id="dot-4"><span class="dot-num">4</span></div>
+  </div>
+  <div class="step-labels">
+    <span class="step-label active" id="lbl-1">Data Diri</span>
+    <span class="step-label" id="lbl-2">Foto Selfie</span>
+    <span class="step-label" id="lbl-3">Tanda Tangan</span>
+    <span class="step-label" id="lbl-4">Konfirmasi</span>
+  </div>
+
+  <!-- ─── STEP 1: Data Diri ─── -->
+  <div id="step-1" class="step-panel">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon">👤</div>
+        <div>
+          <div class="card-title">Data Diri</div>
+          <div class="card-subtitle">Isi informasi identitas Anda</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <label>Nama Lengkap <span class="req">*</span></label>
+          <input type="text" id="nama" placeholder="Masukkan nama lengkap Anda" autocomplete="name">
+          <div class="field-error" id="err-nama">Nama lengkap wajib diisi</div>
+        </div>
+        <div class="field">
+          <label>Perangkat Daerah <span class="req">*</span></label>
+          <select id="pd">
+            <option value="" disabled selected>Pilih Perangkat Daerah</option>
+              <option value="Sekretariat Daerah">Sekretariat Daerah</option>
+              <option value="Sekretariat DPRD">Sekretariat DPRD</option>
+              <option value="Inspektorat Daerah">Inspektorat Daerah</option>
+              <option value="BKPP">BKPP</option>
+              <option value="Bappeda">Bappeda Riset dan Inovasi</option>
+              <option value="BPBD">BPBD</option>
+              <option value="BKAD">BKAD</option>
+              <option value="Bakesbangpol">Bakesbangpol</option>
+              <option value="Satpol PP">Satpol PP</option>
+              <option value="DPUPRKP">DPUPRKP</option>
+              <option value="Dinas Pendidikan">Dinas Pendidikan</option>
+              <option value="Dinas Pariwisata">Dinas Pariwisata</option>
+              <option value="Dinas Perhubungan">Dinas Perhubungan</option>
+              <option value="Dinas Pertanian dan Pangan">Dinas Pertanian dan Pangan</option>
+              <option value="Dinas Kelautan dan Perikanan">Dinas Kelautan dan Perikanan</option>
+              <option value="Disdukcapil">Disdukcapil</option>
+              <option value="Diskominfo">Diskominfo</option>
+              <option value="Dinas Sosial P3A">Dinas Sosial P3A</option>
+              <option value="Disperinkop UKM">Disperinkop UKM</option>
+              <option value="Disdagaker">Disdagaker</option>
+              <option value="Dinas Kebudayaan">Dinas Kebudayaan</option>
+              <option value="DPMPKB">DPMPKB</option>
+              <option value="Dinas Lingkungan Hidup">Dinas Lingkungan Hidup</option>
+              <option value="DPTR">DPTR (Kundha Niti Mandala)</option>
+              <option value="DPK">DPK (Perpustakaan)</option>
+              <option value="DPMPTSP">DPMPTSP</option>
+              <option value="Dinas Kesehatan">Dinas Kesehatan</option>
+              <option value="RSUD Wonosari">RSUD Wonosari</option>
+              <option value="RSUD Saptosari">RSUD Saptosari</option>
+              <option value="Kapanewon Wonosari">Kapanewon Wonosari</option>
+              <option value="Kapanewon Patuk">Kapanewon Patuk</option>
+              <option value="Kapanewon Saptosari">Kapanewon Saptosari</option>
+              <option value="Kapanewon Gedangsari">Kapanewon Gedangsari</option>
+              <option value="Kapanewon Ponjong">Kapanewon Ponjong</option>
+              <option value="Kapanewon Paliyan">Kapanewon Paliyan</option>
+              <option value="Kapanewon Semanu">Kapanewon Semanu</option>
+              <option value="Kapanewon Tanjungsari">Kapanewon Tanjungsari</option>
+              <option value="Kapanewon Karangmojo">Kapanewon Karangmojo</option>
+              <option value="Kapanewon Purwosari">Kapanewon Purwosari</option>
+              <option value="Kapanewon Rongkop">Kapanewon Rongkop</option>
+              <option value="Kapanewon Ngawen">Kapanewon Ngawen</option>
+              <option value="Kapanewon Girisubo">Kapanewon Girisubo</option>
+              <option value="Kapanewon Panggang">Kapanewon Panggang</option>
+              <option value="Kapanewon Semin">Kapanewon Semin</option>
+              <option value="Kapanewon Nglipar">Kapanewon Nglipar</option>
+              <option value="Kapanewon Playen">Kapanewon Playen</option>
+              <option value="Kapanewon Tepus">Kapanewon Tepus</option>
+          </select>
+          <div class="field-error" id="err-pd">Perangkat daerah wajib dipilih</div>
+        </div>
+        <div class="field">
+          <label>Jabatan <span class="req">*</span></label>
+          <input type="text" id="jab" placeholder="Contoh: Staf, Kepala Seksi..." autocomplete="organization-title">
+          <div class="field-error" id="err-jab">Jabatan wajib diisi</div>
+        </div>
+        <div class="field">
+          <label>Nomor HP (WhatsApp) <span class="req">*</span></label>
+          <input type="tel" id="hp" placeholder="08xx-xxxx-xxxx" inputmode="numeric" autocomplete="tel">
+          <div class="field-error" id="err-hp">Nomor HP wajib diisi (minimal 10 digit)</div>
+        </div>
+        <div class="nav-row">
+          <button class="btn-next" onclick="nextStep(1)">Lanjut — Foto Selfie →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── STEP 2: Foto Selfie ─── -->
+  <div id="step-2" class="step-panel" style="display:none">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon">📷</div>
+        <div>
+          <div class="card-title">Foto Selfie</div>
+          <div class="card-subtitle">Posisikan wajah Anda di dalam lingkaran</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div id="cam-container">
+          <div class="cam-wrapper" id="cam-box">
+            <video id="v" autoplay playsinline muted></video>
+            <div class="cam-overlay"></div>
+            <div class="cam-guide"></div>
+            <div class="cam-hint">Pastikan wajah terlihat jelas & cukup cahaya</div>
+          </div>
+          <div class="cam-error" id="cam-err">
+            ⚠️ Kamera tidak dapat diakses.<br>Izinkan akses kamera di pengaturan browser Anda, lalu muat ulang halaman.
+          </div>
+        </div>
+        <div id="prev-container" style="display:none">
+          <div class="preview-wrap">
+            <img id="prev-img" alt="Foto selfie">
+            <div class="preview-badge">✓ Foto diambil</div>
+          </div>
+        </div>
+        <button type="button" class="btn-cam" id="btn-cam" onclick="snap()">
+          <span id="cam-btn-icon">📸</span> <span id="cam-btn-text">Ambil Foto</span>
+        </button>
+        <div class="field-error show" id="err-foto" style="display:none; margin-top:8px">Foto selfie wajib diambil terlebih dahulu</div>
+        <div class="nav-row">
+          <button class="btn-back" onclick="prevStep(2)">←</button>
+          <button class="btn-next" id="btn-next-2" onclick="nextStep(2)">Lanjut — Tanda Tangan →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── STEP 3: Tanda Tangan ─── -->
+  <div id="step-3" class="step-panel" style="display:none">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon">✍️</div>
+        <div>
+          <div class="card-title">Tanda Tangan Digital</div>
+          <div class="card-subtitle">Tanda tangani di area bawah ini</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <div class="sig-header">
+            <label style="margin:0">Area Tanda Tangan <span class="req">*</span></label>
+            <button type="button" class="btn-clr" onclick="clrSig()">✕ Hapus</button>
+          </div>
+          <div class="sig-canvas-wrap" id="sig-wrap">
+            <canvas id="sig-pad"></canvas>
+            <div class="sig-placeholder" id="sig-ph">
+              <div class="sig-placeholder-text">↓ Tanda tangan di sini ↓<br><small>Gunakan jari atau stylus</small></div>
+            </div>
+          </div>
+          <div class="field-error" id="err-ttd">Tanda tangan wajib diisi</div>
+        </div>
+        <div class="nav-row">
+          <button class="btn-back" onclick="prevStep(3)">←</button>
+          <button class="btn-next" onclick="nextStep(3)">Lanjut — Review →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── STEP 4: Konfirmasi ─── -->
+  <div id="step-4" class="step-panel" style="display:none">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon">📋</div>
+        <div>
+          <div class="card-title">Konfirmasi Data</div>
+          <div class="card-subtitle">Pastikan data Anda sudah benar</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="review-grid">
+          <div class="review-item">
+            <span class="review-key">Nama Lengkap</span>
+            <span class="review-val" id="rv-nama">—</span>
+          </div>
+          <div class="review-item">
+            <span class="review-key">Perangkat Daerah</span>
+            <span class="review-val" id="rv-pd">—</span>
+          </div>
+          <div class="review-item">
+            <span class="review-key">Jabatan</span>
+            <span class="review-val" id="rv-jab">—</span>
+          </div>
+          <div class="review-item">
+            <span class="review-key">Nomor HP</span>
+            <span class="review-val" id="rv-hp">—</span>
+          </div>
+        </div>
+        <div class="review-images" style="margin-top: 12px;">
+          <div>
+            <div class="review-img-label">Foto Selfie</div>
+            <div class="review-img-box"><img id="rv-foto" alt="Foto"></div>
+          </div>
+          <div>
+            <div class="review-img-label">Tanda Tangan</div>
+            <div class="review-img-box" style="background:#f9f9fb"><img id="rv-ttd" alt="TTD"></div>
+          </div>
+        </div>
+        <div class="nav-row">
+          <button class="btn-back" onclick="prevStep(4)">←</button>
+          <button class="btn-submit" id="btn-submit" onclick="kirim()">✓ Kirim Presensi</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── SUCCESS ─── -->
+  <div id="step-success" style="display:none">
+    <div class="card">
+      <div class="success-screen">
+        <div class="success-icon">✓</div>
+        <div class="success-title">Presensi Terkirim!</div>
+        <div class="success-msg">
+          Terima kasih, <strong id="suc-nama"></strong>.<br>
+          Data kehadiran Anda telah berhasil dicatat.
+        </div>
+        <div class="success-meta" id="suc-ts"></div>
+        <button class="btn-reset" onclick="resetForm()">↩ Isi Presensi Baru</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">Powered by <strong>Diskominfo</strong> Gunungkidul</div>
+
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+// KONFIGURASI — Ganti URL di bawah ini dengan
+// Web App URL dari Google Apps Script Anda
+// ══════════════════════════════════════════════
+const GAS_URL = "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec";
+// ══════════════════════════════════════════════
+
+let currentStep = 1;
+let fotoData = "";
+let sigHasContent = false;
+let stream = null;
+
+// ─── Offline Detection ───
+function updateOnline() {
+  document.getElementById('offline-banner').classList.toggle('show', !navigator.onLine);
+}
+window.addEventListener('online', updateOnline);
+window.addEventListener('offline', updateOnline);
+updateOnline();
+
+// ─── Step Navigation ───
+function showStep(n) {
+  for (let i = 1; i <= 4; i++) {
+    const el = document.getElementById('step-' + i);
+    if (el) el.style.display = i === n ? 'block' : 'none';
+  }
+  document.getElementById('step-success').style.display = 'none';
+  updateProgress(n);
+  currentStep = n;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  if (n === 2) initCamera();
+  if (n === 3) initSig();
+  if (n === 4) fillReview();
+}
+
+function updateProgress(active) {
+  for (let i = 1; i <= 4; i++) {
+    const dot = document.getElementById('dot-' + i);
+    const lbl = document.getElementById('lbl-' + i);
+    dot.classList.remove('active', 'done');
+    lbl.classList.remove('active', 'done');
+    if (i < active) { dot.classList.add('done'); lbl.classList.add('done'); }
+    else if (i === active) { dot.classList.add('active'); lbl.classList.add('active'); }
+    if (i <= 3) {
+      const line = document.getElementById('line-' + i);
+      line.classList.toggle('done', i < active);
+    }
+  }
+}
+
+function prevStep(from) { showStep(from - 1); }
+
+function nextStep(from) {
+  if (from === 1 && !validateStep1()) return;
+  if (from === 2 && !validateStep2()) return;
+  if (from === 3 && !validateStep3()) return;
+  showStep(from + 1);
+}
+
+// ─── Validation ───
+function validateStep1() {
+  let ok = true;
+  const nama = document.getElementById('nama').value.trim();
+  const pd   = document.getElementById('pd').value;
+  const jab  = document.getElementById('jab').value.trim();
+  const hp   = document.getElementById('hp').value.trim();
+
+  setErr('nama', !nama);
+  setErr('pd', !pd);
+  setErr('jab', !jab);
+  setErr('hp', hp.replace(/\D/g,'').length < 10);
+
+  return nama && pd && jab && hp.replace(/\D/g,'').length >= 10;
+}
+
+function validateStep2() {
+  const hasPhoto = !!fotoData;
+  const errEl = document.getElementById('err-foto');
+  errEl.style.display = hasPhoto ? 'none' : 'block';
+  return hasPhoto;
+}
+
+function validateStep3() {
+  const ok = sigHasContent;
+  setErr('ttd', !ok);
+  return ok;
+}
+
+function setErr(id, show) {
+  const field = document.getElementById(id);
+  const err   = document.getElementById('err-' + id);
+  if (!field || !err) return;
+  field.classList.toggle('error', show);
+  err.classList.toggle('show', show);
+}
+
+// ─── Camera ───
+function initCamera() {
+  if (fotoData) return; // already taken
+  if (stream) return;
+  const v = document.getElementById('v');
+  const errEl = document.getElementById('cam-err');
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 720 } } })
+    .then(s => {
+      stream = s;
+      v.srcObject = s;
+      document.getElementById('cam-box').style.display = 'block';
+      errEl.classList.remove('show');
+    })
+    .catch(() => {
+      errEl.classList.add('show');
+      document.getElementById('cam-box').style.display = 'none';
+    });
+}
+
+function stopCamera() {
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+}
+
+function snap() {
+  const isRetake = !!fotoData;
+  if (!isRetake) {
+    // Take photo
+    const v = document.getElementById('v');
+    if (!v.srcObject) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = v.videoWidth || 640;
+    canvas.height = v.videoHeight || 480;
+    canvas.getContext('2d').drawImage(v, 0, 0);
+    fotoData = canvas.toDataURL('image/jpeg', 0.85);
+    document.getElementById('prev-img').src = fotoData;
+    document.getElementById('prev-container').style.display = 'block';
+    document.getElementById('cam-container').style.display = 'none';
+    document.getElementById('cam-btn-icon').textContent = '🔄';
+    document.getElementById('cam-btn-text').textContent = 'Ulang Foto';
+    document.getElementById('err-foto').style.display = 'none';
+    stopCamera();
+  } else {
+    // Retake
+    fotoData = "";
+    document.getElementById('prev-container').style.display = 'none';
+    document.getElementById('cam-container').style.display = 'block';
+    document.getElementById('cam-btn-icon').textContent = '📸';
+    document.getElementById('cam-btn-text').textContent = 'Ambil Foto';
+    stream = null;
+    initCamera();
+  }
+}
+
+// ─── Signature ───
+function initSig() {
+  const pad = document.getElementById('sig-pad');
+  const wrap = document.getElementById('sig-wrap');
+  pad.width = pad.offsetWidth;
+  pad.height = pad.offsetHeight || 160;
+  const ctx = pad.getContext('2d');
+  ctx.strokeStyle = '#0f1117';
+  ctx.lineWidth = 2.5;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  let drawing = false;
+
+  const getPos = e => {
+    const r = pad.getBoundingClientRect();
+    const t = e.touches ? e.touches[0] : e;
+    return { x: (t.clientX - r.left) * (pad.width / r.width), y: (t.clientY - r.top) * (pad.height / r.height) };
+  };
+
+  const startDraw = e => {
+    drawing = true;
+    ctx.beginPath();
+    const p = getPos(e);
+    ctx.moveTo(p.x, p.y);
+    document.getElementById('sig-ph').style.display = 'none';
+    wrap.classList.add('active');
+  };
+  const draw = e => {
+    if (!drawing) return;
+    e.preventDefault();
+    const p = getPos(e);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+    sigHasContent = true;
+    setErr('ttd', false);
+  };
+  const endDraw = () => { drawing = false; wrap.classList.remove('active'); };
+
+  pad.removeEventListener('mousedown', pad._sd);
+  pad.removeEventListener('mousemove', pad._mv);
+  pad.removeEventListener('touchstart', pad._ts);
+  pad.removeEventListener('touchmove', pad._tm);
+  window.removeEventListener('mouseup', pad._mu);
+  window.removeEventListener('touchend', pad._te);
+
+  pad._sd = startDraw; pad._mv = draw; pad._ts = startDraw; pad._tm = draw;
+  pad._mu = endDraw; pad._te = endDraw;
+
+  pad.addEventListener('mousedown', pad._sd);
+  pad.addEventListener('mousemove', pad._mv);
+  pad.addEventListener('touchstart', pad._ts, { passive: false });
+  pad.addEventListener('touchmove', pad._tm, { passive: false });
+  window.addEventListener('mouseup', pad._mu);
+  window.addEventListener('touchend', pad._te);
+}
+
+function clrSig() {
+  const pad = document.getElementById('sig-pad');
+  const ctx = pad.getContext('2d');
+  ctx.clearRect(0, 0, pad.width, pad.height);
+  sigHasContent = false;
+  document.getElementById('sig-ph').style.display = 'flex';
+}
+
+// ─── Review ───
+function fillReview() {
+  document.getElementById('rv-nama').textContent = document.getElementById('nama').value;
+  document.getElementById('rv-pd').textContent   = document.getElementById('pd').value;
+  document.getElementById('rv-jab').textContent  = document.getElementById('jab').value;
+  document.getElementById('rv-hp').textContent   = document.getElementById('hp').value;
+  document.getElementById('rv-foto').src = fotoData;
+  document.getElementById('rv-ttd').src  = document.getElementById('sig-pad').toDataURL();
+}
+
+// ─── Submit ───
+function kirim() {
+  if (!navigator.onLine) {
+    alert('Tidak ada koneksi internet. Coba lagi setelah terhubung ke internet.');
+    return;
+  }
+
+  const loadingEl = document.getElementById('loading-overlay');
+  loadingEl.classList.add('show');
+  document.getElementById('btn-submit').disabled = true;
+
+  const data = {
+    nama:          document.getElementById('nama').value.trim(),
+    perangkatDaerah: document.getElementById('pd').value,
+    jabatan:       document.getElementById('jab').value.trim(),
+    noHP:          document.getElementById('hp').value.trim(),
+    foto:          fotoData,
+    ttd:           document.getElementById('sig-pad').toDataURL('image/png')
+  };
+
+  // Gunakan fetch jika frontend dihosting terpisah dari GAS
+  fetch(GAS_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(data)
+  })
+  .then(() => {
+    // no-cors = opaque response, kita asumsikan sukses jika tidak error
+    loadingEl.classList.remove('show');
+    showSuccess(data.nama);
+  })
+  .catch(err => {
+    loadingEl.classList.remove('show');
+    document.getElementById('btn-submit').disabled = false;
+    alert('Gagal mengirim: ' + err.message + '\n\nPastikan URL GAS sudah diset dengan benar.');
+  });
+}
+
+function showSuccess(nama) {
+  stopCamera();
+  for (let i = 1; i <= 4; i++) {
+    const el = document.getElementById('step-' + i);
+    if (el) el.style.display = 'none';
+  }
+  // set semua step sebagai done
+  for (let i = 1; i <= 4; i++) {
+    const dot = document.getElementById('dot-' + i);
+    if (dot) { dot.classList.remove('active'); dot.classList.add('done'); }
+    const lbl = document.getElementById('lbl-' + i);
+    if (lbl) { lbl.classList.remove('active'); lbl.classList.add('done'); }
+  }
+  for (let i = 1; i <= 3; i++) {
+    const line = document.getElementById('line-' + i);
+    if (line) line.classList.add('done');
+  }
+
+  document.getElementById('step-success').style.display = 'block';
+  document.getElementById('suc-nama').textContent = nama;
+  const now = new Date();
+  document.getElementById('suc-ts').textContent =
+    'Dicatat: ' + now.toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' }) +
+    ' · ' + now.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' }) + ' WIB';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function resetForm() {
+  document.getElementById('nama').value = '';
+  document.getElementById('pd').value   = '';
+  document.getElementById('jab').value  = '';
+  document.getElementById('hp').value   = '';
+  fotoData = "";
+  sigHasContent = false;
+  stream = null;
+  document.getElementById('btn-submit').disabled = false;
+  // reset sig
+  const pad = document.getElementById('sig-pad');
+  if (pad) pad.getContext('2d').clearRect(0, 0, pad.width, pad.height);
+  // reset camera UI
+  document.getElementById('prev-container').style.display = 'none';
+  document.getElementById('cam-container').style.display = 'block';
+  document.getElementById('cam-btn-icon').textContent = '📸';
+  document.getElementById('cam-btn-text').textContent = 'Ambil Foto';
+  showStep(1);
+}
+
+// ─── Phone number formatting ───
+document.getElementById('hp').addEventListener('input', function() {
+  // hanya angka dan tanda -
+  this.value = this.value.replace(/[^\d\-]/g, '');
+});
+</script>
+</body>
+</html>
